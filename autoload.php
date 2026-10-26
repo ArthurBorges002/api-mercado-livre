@@ -3,7 +3,7 @@
 /**
  * Autoload para usar a biblioteca sem Composer:
  *
- *     require __DIR__ . '/api-mercado-livre-ecommerce/autoload.php';
+ *     require __DIR__ . '/api-mercado-livre/autoload.php';
  *
  * Com Composer, use o vendor/autoload.php normalmente.
  */

@@ -1,4 +1,4 @@
-# api-mercado-livre-ecommerce
+# api-mercado-livre
 
 Biblioteca PHP para integrar sistemas de gestão (ERP) com o **Mercado Livre**.
 
@@ -13,13 +13,13 @@ Ela cuida da parte do Mercado Livre: autorização da conta, renovação automá
 **Sem Composer** (copiando a pasta para dentro do sistema):
 
 ```php
-require __DIR__ . '/api-mercado-livre-ecommerce/autoload.php';
+require __DIR__ . '/api-mercado-livre/autoload.php';
 ```
 
 **Com Composer:**
 
 ```bash
-composer require arthurborges002/api-mercado-livre-ecommerce
+composer require arthurborges002/api-mercado-livre
 ```
 
 ## Antes de usar

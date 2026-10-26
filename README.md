@@ -34,8 +34,8 @@ composer require arthurborges002/api-mercado-livre
 ### 1. Configurar
 
 ```php
-use MercadoLivreEcommerce\Config;
-use MercadoLivreEcommerce\MercadoLivre;
+use ApiMercadoLivre\Config;
+use ApiMercadoLivre\MercadoLivre;
 
 $config = new Config($clientId, $clientSecret, 'https://seu-dominio/ml_auth.php');
 $ml = new MercadoLivre($config, $storage);
@@ -44,8 +44,8 @@ $ml = new MercadoLivre($config, $storage);
 `$storage` é onde os tokens ficam guardados. Implemente a interface `TokenStorage` com o banco do seu sistema:
 
 ```php
-use MercadoLivreEcommerce\Token;
-use MercadoLivreEcommerce\TokenStorage;
+use ApiMercadoLivre\Token;
+use ApiMercadoLivre\TokenStorage;
 
 final class MeuStorage implements TokenStorage
 {
@@ -80,7 +80,7 @@ Exemplo completo em [`examples/autorizar.php`](examples/autorizar.php).
 ### 3. Receber avisos de venda
 
 ```php
-use MercadoLivreEcommerce\Webhook\Notification;
+use ApiMercadoLivre\Webhook\Notification;
 
 $aviso = Notification::fromJson(file_get_contents('php://input'));
 if ($aviso->isOrder() && $aviso->belongsTo($sellerId)) {
@@ -112,7 +112,7 @@ Outros recursos:
 | Chamada | Retorna |
 | --- | --- |
 | `$ml->orders()->recentPaid($sellerId)` | Pedidos pagos recentes (para recuperar avisos perdidos) |
-| `$ml->orders()->billingInfo($orderId)` | Dados de faturamento do comprador (CPF/CNPJ) |
+| `$ml->orders()->billingInfo($pedido->billingInfoId())` | Dados de faturamento do comprador (CPF/CNPJ, endereço fiscal) |
 | `$ml->shipments()->get($pedido->shippingId())` | Envio e endereço de entrega |
 | `$ml->items()->idsBySeller($sellerId)` | Ids dos anúncios ativos |
 | `$ml->items()->getMany($ids)` | Detalhes dos anúncios (título, SKU, variações) |

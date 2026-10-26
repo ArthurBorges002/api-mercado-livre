@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../autoload.php';
 
-use MercadoLivreEcommerce\Webhook\Notification;
+use ApiMercadoLivre\Webhook\Notification;
 
 $sellerId = (int) getenv('ML_SELLER_ID');
 $fila = getenv('ML_FILA_FILE') ?: sys_get_temp_dir() . '/ml_fila.txt';

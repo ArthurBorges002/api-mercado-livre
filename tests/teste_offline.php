@@ -10,14 +10,14 @@ declare(strict_types=1);
 
 require __DIR__ . '/../autoload.php';
 
-use MercadoLivreEcommerce\Config;
-use MercadoLivreEcommerce\Exception\AuthException;
-use MercadoLivreEcommerce\Http\HttpClient;
-use MercadoLivreEcommerce\Http\Response;
-use MercadoLivreEcommerce\MercadoLivre;
-use MercadoLivreEcommerce\Token;
-use MercadoLivreEcommerce\TokenStorage;
-use MercadoLivreEcommerce\Webhook\Notification;
+use ApiMercadoLivre\Config;
+use ApiMercadoLivre\Exception\AuthException;
+use ApiMercadoLivre\Http\HttpClient;
+use ApiMercadoLivre\Http\Response;
+use ApiMercadoLivre\MercadoLivre;
+use ApiMercadoLivre\Token;
+use ApiMercadoLivre\TokenStorage;
+use ApiMercadoLivre\Webhook\Notification;
 
 /** Responde com o que estiver na fila e guarda as requisições feitas. */
 final class HttpFalso implements HttpClient
@@ -124,7 +124,7 @@ $http->respostas[] = new Response(200, (string) json_encode([
     'date_closed' => '2026-10-26T14:00:00.000-03:00',
     'total_amount' => 150.0,
     'paid_amount' => 172.9,
-    'buyer' => ['id' => 555, 'nickname' => 'JOAO123'],
+    'buyer' => ['id' => 555, 'nickname' => 'JOAO123', 'billing_info' => ['id' => '677487519924852462']],
     'shipping' => ['id' => 4000001],
     'order_items' => [
         ['item' => ['id' => 'MLB111', 'title' => 'Tinta Acrílica 18L', 'seller_sku' => '1050', 'variation_id' => null], 'quantity' => 1, 'unit_price' => 100.0, 'sale_fee' => 16.5],
@@ -136,13 +136,14 @@ $itens = $pedido->items();
 confere('Pedido: status e totais', $pedido->isPaid() && $pedido->totalAmount() === 150.0 && $pedido->shippingId() === 4000001);
 confere('Pedido: itens, SKU e variação', count($itens) === 2 && $itens[0]->sellerSku() === '1050' && $itens[1]->sellerSku() === null && $itens[1]->variationId() === 777);
 confere('Pedido: total do item e tarifas', $itens[1]->total() === 50.0 && $pedido->totalSaleFee() === 24.5);
+confere('Pedido: id dos dados de faturamento', $pedido->billingInfoId() === '677487519924852462');
 
 // Erro da API
 $http->respostas[] = new Response(404, '{"message":"Order not found","error":"not_found"}');
 try {
     $ml->orders()->get(1);
     confere('404 lança ApiException', false);
-} catch (\MercadoLivreEcommerce\Exception\ApiException $e) {
+} catch (\ApiMercadoLivre\Exception\ApiException $e) {
     confere('404 lança ApiException', $e->getStatusCode() === 404 && !$e->isTemporary() && !($e instanceof AuthException));
 }
 
@@ -197,12 +198,27 @@ confere('Envio: busca pelo id com x-format-new', strpos($http->feitas[0][1], '/s
     && in_array('x-format-new: true', $http->feitas[0][2], true));
 confere('Envio: devolve o endereço', $envio['receiver_address']['city']['name'] === 'Belo Horizonte');
 
-// Faturamento do comprador
+// Faturamento do comprador: endpoint novo, com o id que vem no pedido
 $http->feitas = [];
-$http->respostas[] = new Response(200, '{"billing_info":{"doc_type":"CPF","doc_number":"00996900632"}}');
-$faturamento = $ml->orders()->billingInfo(2000001234);
-confere('Faturamento: endpoint e documento', strpos($http->feitas[0][1], '/orders/2000001234/billing_info') !== false
-    && $faturamento['billing_info']['doc_number'] === '00996900632');
+$http->respostas[] = new Response(200, (string) json_encode(['site_id' => 'MLB', 'buyer' => ['cust_id' => 555, 'billing_info' => [
+    'name' => 'João', 'last_name' => 'da Silva',
+    'identification' => ['type' => 'CPF', 'number' => '00996900632'],
+    'address' => ['street_name' => 'Rua A', 'street_number' => '10', 'city_name' => 'Belo Horizonte', 'neighborhood' => 'Centro', 'state' => ['name' => 'Minas Gerais'], 'zip_code' => '30140071'],
+]]]));
+$faturamento = $ml->orders()->billingInfo($pedido->billingInfoId());
+confere('Faturamento: endpoint /orders/billing-info/MLB/{id}', strpos($http->feitas[0][1], '/orders/billing-info/MLB/677487519924852462') !== false);
+confere('Faturamento: documento do comprador', $faturamento['buyer']['billing_info']['identification']['number'] === '00996900632');
+
+$http->respostas[] = new Response(404, '{"message":"not found"}');
+try {
+    $ml->orders()->billingInfo('1', 'MLA');
+    confere('Faturamento: 404 lança ApiException', false);
+} catch (\ApiMercadoLivre\Exception\ApiException $e) {
+    confere('Faturamento: 404 lança ApiException', strpos($http->feitas[1][1], '/orders/billing-info/MLA/1') !== false);
+}
+
+$semFaturamento = \ApiMercadoLivre\Model\Order::fromArray(['id' => 1, 'buyer' => ['id' => 555]]);
+confere('Pedido sem dados de faturamento', $semFaturamento->billingInfoId() === null);
 
 // Rede de segurança: pedidos pagos recentes
 $http->feitas = [];

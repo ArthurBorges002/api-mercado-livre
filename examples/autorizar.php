@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/_config.php';
 
-use MercadoLivreEcommerce\Exception\MercadoLivreException;
+use ApiMercadoLivre\Exception\MercadoLivreException;
 
 session_start();
 

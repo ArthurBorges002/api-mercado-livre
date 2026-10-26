@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce;
+namespace ApiMercadoLivre;
 
-use MercadoLivreEcommerce\Exception\ApiException;
-use MercadoLivreEcommerce\Exception\AuthException;
-use MercadoLivreEcommerce\Http\CurlHttpClient;
-use MercadoLivreEcommerce\Http\HttpClient;
-use MercadoLivreEcommerce\Resource\Items;
-use MercadoLivreEcommerce\Resource\Orders;
-use MercadoLivreEcommerce\Resource\Shipments;
-use MercadoLivreEcommerce\Resource\Users;
+use ApiMercadoLivre\Exception\ApiException;
+use ApiMercadoLivre\Exception\AuthException;
+use ApiMercadoLivre\Http\CurlHttpClient;
+use ApiMercadoLivre\Http\HttpClient;
+use ApiMercadoLivre\Resource\Items;
+use ApiMercadoLivre\Resource\Orders;
+use ApiMercadoLivre\Resource\Shipments;
+use ApiMercadoLivre\Resource\Users;
 
 /**
  * Ponto de entrada da biblioteca.

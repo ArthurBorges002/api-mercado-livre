@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../autoload.php';
 
-use MercadoLivreEcommerce\Config;
-use MercadoLivreEcommerce\Http\CurlHttpClient;
-use MercadoLivreEcommerce\MercadoLivre;
-use MercadoLivreEcommerce\Storage\FileTokenStorage;
+use ApiMercadoLivre\Config;
+use ApiMercadoLivre\Http\CurlHttpClient;
+use ApiMercadoLivre\MercadoLivre;
+use ApiMercadoLivre\Storage\FileTokenStorage;
 
 $config = new Config(
     (string) getenv('ML_CLIENT_ID'),

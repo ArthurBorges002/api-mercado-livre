@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Webhook;
+namespace ApiMercadoLivre\Webhook;
 
 /**
  * Aviso enviado pelo Mercado Livre para a URL de notificações do aplicativo.

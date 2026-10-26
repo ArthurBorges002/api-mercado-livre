@@ -8,7 +8,7 @@
  * Com Composer, use o vendor/autoload.php normalmente.
  */
 spl_autoload_register(function ($classe) {
-    $prefixo = 'MercadoLivreEcommerce\\';
+    $prefixo = 'ApiMercadoLivre\\';
     if (strpos($classe, $prefixo) !== 0) {
         return;
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Exception;
+namespace ApiMercadoLivre\Exception;
 
 /**
  * Falha de autorização: conta não conectada, token revogado ou refresh token inválido.

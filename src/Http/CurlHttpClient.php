@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Http;
+namespace ApiMercadoLivre\Http;
 
-use MercadoLivreEcommerce\Exception\ApiException;
+use ApiMercadoLivre\Exception\ApiException;
 
 final class CurlHttpClient implements HttpClient
 {

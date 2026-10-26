@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Storage;
+namespace ApiMercadoLivre\Storage;
 
-use MercadoLivreEcommerce\Token;
-use MercadoLivreEcommerce\TokenStorage;
+use ApiMercadoLivre\Token;
+use ApiMercadoLivre\TokenStorage;
 
 /**
  * Guarda o token num arquivo JSON. Útil para testes e exemplos.

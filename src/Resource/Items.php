@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Resource;
+namespace ApiMercadoLivre\Resource;
 
-use MercadoLivreEcommerce\MercadoLivre;
+use ApiMercadoLivre\MercadoLivre;
 
 final class Items
 {

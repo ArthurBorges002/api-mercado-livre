@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Model;
+namespace ApiMercadoLivre\Model;
 
 /**
  * Pedido do Mercado Livre, com os campos que um ERP costuma precisar.
@@ -95,6 +95,12 @@ final class Order
     public function buyerNickname(): string
     {
         return (string) ($this->raw['buyer']['nickname'] ?? '');
+    }
+
+    /** Id dos dados de faturamento (buyer.billing_info.id), usado em Orders::billingInfo(). */
+    public function billingInfoId(): ?string
+    {
+        return empty($this->raw['buyer']['billing_info']['id']) ? null : (string) $this->raw['buyer']['billing_info']['id'];
     }
 
     public function shippingId(): ?int

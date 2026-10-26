@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce;
+namespace ApiMercadoLivre;
 
 /**
  * Tokens de acesso de uma conta do Mercado Livre.

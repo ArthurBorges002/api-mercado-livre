@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Resource;
+namespace ApiMercadoLivre\Resource;
 
-use MercadoLivreEcommerce\MercadoLivre;
+use ApiMercadoLivre\MercadoLivre;
 
 final class Users
 {
@@ -23,5 +23,17 @@ final class Users
     public function me(): array
     {
         return $this->ml->get('/users/me');
+    }
+
+    /**
+     * Cria um usuário de teste (vendedor ou comprador) no site informado.
+     * A resposta traz id, nickname, password e site_status; guarde login e senha.
+     * Vendas entre usuários de teste não cobram nada.
+     *
+     * @return array<mixed>
+     */
+    public function createTestUser(string $siteId = 'MLB'): array
+    {
+        return $this->ml->post('/users/test_user', ['site_id' => $siteId]);
     }
 }

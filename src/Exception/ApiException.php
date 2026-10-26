@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Exception;
+namespace ApiMercadoLivre\Exception;
 
 /**
  * A API do Mercado Livre respondeu com erro (HTTP 4xx ou 5xx).

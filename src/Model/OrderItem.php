@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Model;
+namespace ApiMercadoLivre\Model;
 
 /**
  * Um item (anúncio + quantidade) de um pedido.

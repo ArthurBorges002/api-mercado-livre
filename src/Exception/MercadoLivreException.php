@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Exception;
+namespace ApiMercadoLivre\Exception;
 
 /**
  * Exceção base da biblioteca. Capture esta para tratar qualquer erro dela.

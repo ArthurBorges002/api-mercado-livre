@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "MercadoLivreEcommerce\\": "src/"
+            "ApiMercadoLivre\\": "src/"
         }
     },
     "minimum-stability": "stable"

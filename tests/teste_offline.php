@@ -10,14 +10,14 @@ declare(strict_types=1);
 
 require __DIR__ . '/../autoload.php';
 
-use MercadoLivreEcommerce\Config;
-use MercadoLivreEcommerce\Exception\AuthException;
-use MercadoLivreEcommerce\Http\HttpClient;
-use MercadoLivreEcommerce\Http\Response;
-use MercadoLivreEcommerce\MercadoLivre;
-use MercadoLivreEcommerce\Token;
-use MercadoLivreEcommerce\TokenStorage;
-use MercadoLivreEcommerce\Webhook\Notification;
+use ApiMercadoLivre\Config;
+use ApiMercadoLivre\Exception\AuthException;
+use ApiMercadoLivre\Http\HttpClient;
+use ApiMercadoLivre\Http\Response;
+use ApiMercadoLivre\MercadoLivre;
+use ApiMercadoLivre\Token;
+use ApiMercadoLivre\TokenStorage;
+use ApiMercadoLivre\Webhook\Notification;
 
 /** Responde com o que estiver na fila e guarda as requisições feitas. */
 final class HttpFalso implements HttpClient
@@ -124,7 +124,7 @@ $http->respostas[] = new Response(200, (string) json_encode([
     'date_closed' => '2026-10-26T14:00:00.000-03:00',
     'total_amount' => 150.0,
     'paid_amount' => 172.9,
-    'buyer' => ['id' => 555, 'nickname' => 'JOAO123'],
+    'buyer' => ['id' => 555, 'nickname' => 'JOAO123', 'billing_info' => ['id' => '677487519924852462']],
     'shipping' => ['id' => 4000001],
     'order_items' => [
         ['item' => ['id' => 'MLB111', 'title' => 'Tinta Acrílica 18L', 'seller_sku' => '1050', 'variation_id' => null], 'quantity' => 1, 'unit_price' => 100.0, 'sale_fee' => 16.5],
@@ -136,15 +136,112 @@ $itens = $pedido->items();
 confere('Pedido: status e totais', $pedido->isPaid() && $pedido->totalAmount() === 150.0 && $pedido->shippingId() === 4000001);
 confere('Pedido: itens, SKU e variação', count($itens) === 2 && $itens[0]->sellerSku() === '1050' && $itens[1]->sellerSku() === null && $itens[1]->variationId() === 777);
 confere('Pedido: total do item e tarifas', $itens[1]->total() === 50.0 && $pedido->totalSaleFee() === 24.5);
+confere('Pedido: id dos dados de faturamento', $pedido->billingInfoId() === '677487519924852462');
 
 // Erro da API
 $http->respostas[] = new Response(404, '{"message":"Order not found","error":"not_found"}');
 try {
     $ml->orders()->get(1);
     confere('404 lança ApiException', false);
-} catch (\MercadoLivreEcommerce\Exception\ApiException $e) {
+} catch (\ApiMercadoLivre\Exception\ApiException $e) {
     confere('404 lança ApiException', $e->getStatusCode() === 404 && !$e->isTemporary() && !($e instanceof AuthException));
 }
+
+/** Query string de uma requisição feita, já separada em campos. */
+function query(string $url): array
+{
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $campos);
+
+    return $campos;
+}
+
+// Anúncios: paginação de 50 em 50 até o total
+$http->feitas = [];
+$http->respostas[] = new Response(200, (string) json_encode(['results' => array_map(function ($n) { return 'MLB' . $n; }, range(1, 50)), 'paging' => ['total' => 120]]));
+$http->respostas[] = new Response(200, (string) json_encode(['results' => array_map(function ($n) { return 'MLB' . $n; }, range(51, 100)), 'paging' => ['total' => 120]]));
+$http->respostas[] = new Response(200, (string) json_encode(['results' => array_map(function ($n) { return 'MLB' . $n; }, range(101, 120)), 'paging' => ['total' => 120]]));
+$ids = $ml->items()->idsBySeller(999);
+$offsets = array_map(function ($feita) { return query($feita[1])['offset'] ?? null; }, $http->feitas);
+confere('Anúncios: busca todas as páginas', count($ids) === 120 && $ids[119] === 'MLB120' && $offsets === ['0', '50', '100']);
+confere('Anúncios: vendedor, status e limite na busca', strpos($http->feitas[0][1], '/users/999/items/search?') !== false
+    && query($http->feitas[0][1])['status'] === 'active' && query($http->feitas[0][1])['limit'] === '50');
+
+// Anúncios: página vazia encerra mesmo com total maior
+$http->feitas = [];
+$http->respostas[] = new Response(200, '{"results":[],"paging":{"total":300}}');
+confere('Anúncios: página vazia encerra a busca', $ml->items()->idsBySeller(999, 'paused') === [] && count($http->feitas) === 1
+    && query($http->feitas[0][1])['status'] === 'paused');
+
+// Anúncios: detalhes em lotes de 20, ignorando os que não vieram
+$http->feitas = [];
+$lista = array_map(function ($n) { return 'MLB' . $n; }, range(1, 45));
+foreach ([array_slice($lista, 0, 20), array_slice($lista, 20, 20), array_slice($lista, 40)] as $lote) {
+    $http->respostas[] = new Response(200, (string) json_encode(array_map(function ($id) {
+        return $id === 'MLB7'
+            ? ['code' => 404, 'body' => ['message' => 'Item not found']]
+            : ['code' => 200, 'body' => ['id' => $id, 'title' => 'Anúncio ' . $id, 'seller_sku' => null]];
+    }, $lote)));
+}
+$anuncios = $ml->items()->getMany($lista);
+$lotes = array_map(function ($feita) { return count(explode(',', query($feita[1])['ids'])); }, $http->feitas);
+confere('Anúncios: getMany em lotes de 20', $lotes === [20, 20, 5]);
+confere('Anúncios: getMany ignora anúncio não encontrado', count($anuncios) === 44 && $anuncios[6]['id'] === 'MLB8');
+
+$http->feitas = [];
+confere('Anúncios: getMany sem ids não chama a API', $ml->items()->getMany([]) === [] && $http->feitas === []);
+
+// Envio: endereço de entrega com o formato novo
+$http->feitas = [];
+$http->respostas[] = new Response(200, '{"id":4000001,"status":"ready_to_ship","receiver_address":{"zip_code":"30140071","city":{"name":"Belo Horizonte"},"state":{"id":"BR-MG"}}}');
+$envio = $ml->shipments()->get(4000001);
+confere('Envio: busca pelo id com x-format-new', strpos($http->feitas[0][1], '/shipments/4000001') !== false
+    && in_array('x-format-new: true', $http->feitas[0][2], true));
+confere('Envio: devolve o endereço', $envio['receiver_address']['city']['name'] === 'Belo Horizonte');
+
+// Faturamento do comprador: endpoint novo, com o id que vem no pedido
+$http->feitas = [];
+$http->respostas[] = new Response(200, (string) json_encode(['site_id' => 'MLB', 'buyer' => ['cust_id' => 555, 'billing_info' => [
+    'name' => 'João', 'last_name' => 'da Silva',
+    'identification' => ['type' => 'CPF', 'number' => '00996900632'],
+    'address' => ['street_name' => 'Rua A', 'street_number' => '10', 'city_name' => 'Belo Horizonte', 'neighborhood' => 'Centro', 'state' => ['name' => 'Minas Gerais'], 'zip_code' => '30140071'],
+]]]));
+$faturamento = $ml->orders()->billingInfo($pedido->billingInfoId());
+confere('Faturamento: endpoint /orders/billing-info/MLB/{id}', strpos($http->feitas[0][1], '/orders/billing-info/MLB/677487519924852462') !== false);
+confere('Faturamento: documento do comprador', $faturamento['buyer']['billing_info']['identification']['number'] === '00996900632');
+
+$http->respostas[] = new Response(404, '{"message":"not found"}');
+try {
+    $ml->orders()->billingInfo('1', 'MLA');
+    confere('Faturamento: 404 lança ApiException', false);
+} catch (\ApiMercadoLivre\Exception\ApiException $e) {
+    confere('Faturamento: 404 lança ApiException', strpos($http->feitas[1][1], '/orders/billing-info/MLA/1') !== false);
+}
+
+$semFaturamento = \ApiMercadoLivre\Model\Order::fromArray(['id' => 1, 'buyer' => ['id' => 555]]);
+confere('Pedido sem dados de faturamento', $semFaturamento->billingInfoId() === null);
+
+// Rede de segurança: pedidos pagos recentes
+$http->feitas = [];
+$http->respostas[] = new Response(200, (string) json_encode(['results' => [
+    ['id' => 2000000002, 'status' => 'paid', 'order_items' => []],
+    ['id' => 2000000001, 'status' => 'paid', 'order_items' => []],
+], 'paging' => ['total' => 2]]));
+$recentes = $ml->orders()->recentPaid(999, 10);
+$filtros = query($http->feitas[0][1]);
+confere('Pagos recentes: filtros da busca', strpos($http->feitas[0][1], '/orders/search?') !== false && $filtros['seller'] === '999'
+    && strpos($http->feitas[0][1], 'order.status=paid') !== false && $filtros['sort'] === 'date_desc' && $filtros['limit'] === '10');
+confere('Pagos recentes: vira lista de Order', count($recentes) === 2 && $recentes[0]->id() === 2000000002 && $recentes[1]->isPaid());
+
+$http->respostas[] = new Response(200, '{"results":[],"paging":{"total":0}}');
+confere('Pagos recentes: nenhum pedido', $ml->orders()->recentPaid(999) === []);
+
+// Usuário de teste
+$http->feitas = [];
+$http->respostas[] = new Response(201, '{"id":1234567,"nickname":"TESTUSER123","password":"qatest123","site_status":"active"}');
+$usuario = $ml->users()->createTestUser();
+confere('Usuário de teste: POST com site_id MLB', $http->feitas[0][0] === 'POST' && strpos($http->feitas[0][1], '/users/test_user') !== false
+    && json_decode((string) $http->feitas[0][3], true) === ['site_id' => 'MLB']);
+confere('Usuário de teste: devolve login e senha', $usuario['nickname'] === 'TESTUSER123' && $usuario['password'] === 'qatest123');
 
 // Webhook
 $aviso = Notification::fromJson('{"resource":"/orders/2000001234","user_id":999,"topic":"orders_v2","application_id":123,"attempts":1}');

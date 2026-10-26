@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce;
+namespace ApiMercadoLivre;
 
 /**
  * Credenciais do aplicativo criado no portal de desenvolvedores do Mercado Livre.

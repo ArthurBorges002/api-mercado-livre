@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Resource;
+namespace ApiMercadoLivre\Resource;
 
-use MercadoLivreEcommerce\MercadoLivre;
-use MercadoLivreEcommerce\Model\Order;
+use ApiMercadoLivre\MercadoLivre;
+use ApiMercadoLivre\Model\Order;
 
 final class Orders
 {
@@ -52,16 +52,19 @@ final class Orders
     }
 
     /**
-     * Dados de faturamento do comprador (nome, CPF/CNPJ, endereço fiscal).
+     * Dados de faturamento do comprador: buyer.billing_info com name, last_name,
+     * identification (type CPF/CNPJ, number sem máscara), address e taxes.
      *
-     * Atenção: o Mercado Livre está migrando este recurso para um endpoint novo.
-     * Confira na documentação oficial antes de usar em produção.
+     * O id vem do pedido: Order::billingInfoId(). O endereço é o fiscal e pode ser
+     * diferente do endereço de entrega (Shipments::get()). Campos podem vir ausentes
+     * ou nulos, então trate cada um como opcional.
      *
-     * @param int|string $orderId
+     * Substitui o antigo /orders/{id}/billing_info, que o Mercado Livre descontinuou.
+     *
      * @return array<mixed>
      */
-    public function billingInfo($orderId): array
+    public function billingInfo(string $billingInfoId, string $siteId = 'MLB'): array
     {
-        return $this->ml->get('/orders/' . $orderId . '/billing_info');
+        return $this->ml->get('/orders/billing-info/' . rawurlencode($siteId) . '/' . rawurlencode($billingInfoId));
     }
 }

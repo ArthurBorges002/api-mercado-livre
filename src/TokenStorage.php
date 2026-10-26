@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce;
+namespace ApiMercadoLivre;
 
 /**
  * Onde o sistema guarda os tokens da conta (banco de dados, arquivo...).

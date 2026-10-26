@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce;
+namespace ApiMercadoLivre;
 
-use MercadoLivreEcommerce\Exception\AuthException;
-use MercadoLivreEcommerce\Http\HttpClient;
+use ApiMercadoLivre\Exception\AuthException;
+use ApiMercadoLivre\Http\HttpClient;
 
 /**
  * Fluxo OAuth 2.0 do Mercado Livre.

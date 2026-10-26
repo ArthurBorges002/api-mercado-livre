@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Http;
+namespace ApiMercadoLivre\Http;
 
 final class Response
 {

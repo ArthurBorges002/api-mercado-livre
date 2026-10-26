@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MercadoLivreEcommerce\Http;
+namespace ApiMercadoLivre\Http;
 
 /**
  * Faz as requisições HTTP. Existe como interface para poder trocar nos testes.

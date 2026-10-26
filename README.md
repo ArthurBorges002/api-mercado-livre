@@ -117,6 +117,7 @@ Outros recursos:
 | `$ml->items()->idsBySeller($sellerId)` | Ids dos anúncios ativos |
 | `$ml->items()->getMany($ids)` | Detalhes dos anúncios (título, SKU, variações) |
 | `$ml->users()->me()` | Conta conectada |
+| `$ml->users()->createTestUser('MLB')` | Cria usuário de teste (vendedor ou comprador) |
 | `$ml->get('/qualquer/recurso')` | Qualquer outro endpoint da API |
 
 ### Token

@@ -219,6 +219,14 @@ confere('Pagos recentes: vira lista de Order', count($recentes) === 2 && $recent
 $http->respostas[] = new Response(200, '{"results":[],"paging":{"total":0}}');
 confere('Pagos recentes: nenhum pedido', $ml->orders()->recentPaid(999) === []);
 
+// Usuário de teste
+$http->feitas = [];
+$http->respostas[] = new Response(201, '{"id":1234567,"nickname":"TESTUSER123","password":"qatest123","site_status":"active"}');
+$usuario = $ml->users()->createTestUser();
+confere('Usuário de teste: POST com site_id MLB', $http->feitas[0][0] === 'POST' && strpos($http->feitas[0][1], '/users/test_user') !== false
+    && json_decode((string) $http->feitas[0][3], true) === ['site_id' => 'MLB']);
+confere('Usuário de teste: devolve login e senha', $usuario['nickname'] === 'TESTUSER123' && $usuario['password'] === 'qatest123');
+
 // Webhook
 $aviso = Notification::fromJson('{"resource":"/orders/2000001234","user_id":999,"topic":"orders_v2","application_id":123,"attempts":1}');
 confere('Webhook: pedido da conta certa', $aviso->isOrder() && $aviso->belongsTo(999, '123') && $aviso->resourceId() === '2000001234');

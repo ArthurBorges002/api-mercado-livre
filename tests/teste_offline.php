@@ -115,6 +115,16 @@ try {
     confere('Refresh recusado lança AuthException', $e->getError() === 'invalid_grant');
 }
 
+// App sem offline_access: o ML não devolve refresh_token
+$tokenAntes = $storage->token;
+$http->respostas[] = new Response(200, '{"access_token":"A9","expires_in":21600,"user_id":999}');
+try {
+    $ml->connect('TG-code');
+    confere('Sem refresh_token lança AuthException', false);
+} catch (AuthException $e) {
+    confere('Sem refresh_token lança AuthException', strpos($e->getMessage(), 'offline_access') !== false && $storage->token === $tokenAntes);
+}
+
 // Pedido
 $storage->token = new Token('A4', 'R4', time() + 3600, 999);
 $http->respostas[] = new Response(200, (string) json_encode([

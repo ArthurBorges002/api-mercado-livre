@@ -83,6 +83,14 @@ final class Auth
             throw new AuthException('Falha na autorização do Mercado Livre: ' . $detalhe, $resposta->status(), $dados);
         }
 
+        if (empty($dados['refresh_token'])) {
+            throw new AuthException(
+                'O Mercado Livre não devolveu refresh_token. Ative o escopo offline_access no aplicativo e autorize de novo.',
+                $resposta->status(),
+                $dados
+            );
+        }
+
         return Token::fromOAuthResponse($dados);
     }
 }

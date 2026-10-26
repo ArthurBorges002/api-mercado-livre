@@ -1,0 +1,23 @@
+{
+    "name": "arthurborges002/api-mercado-livre-ecommerce",
+    "type": "library",
+    "description": "Biblioteca PHP para integrar sistemas de gestão (ERP) com o Mercado Livre: autorização OAuth, notificações, pedidos, envios e anúncios.",
+    "keywords": ["mercado livre", "mercadolibre", "erp", "ecommerce", "pedidos"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Arthur Gabriel Borges"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "MercadoLivreEcommerce\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}

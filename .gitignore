@@ -1,0 +1,7 @@
+/vendor/
+composer.lock
+.env
+*.token.json
+ml_token.json
+.idea/
+.vscode/

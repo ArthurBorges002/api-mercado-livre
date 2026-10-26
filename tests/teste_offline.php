@@ -146,6 +146,79 @@ try {
     confere('404 lança ApiException', $e->getStatusCode() === 404 && !$e->isTemporary() && !($e instanceof AuthException));
 }
 
+/** Query string de uma requisição feita, já separada em campos. */
+function query(string $url): array
+{
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $campos);
+
+    return $campos;
+}
+
+// Anúncios: paginação de 50 em 50 até o total
+$http->feitas = [];
+$http->respostas[] = new Response(200, (string) json_encode(['results' => array_map(function ($n) { return 'MLB' . $n; }, range(1, 50)), 'paging' => ['total' => 120]]));
+$http->respostas[] = new Response(200, (string) json_encode(['results' => array_map(function ($n) { return 'MLB' . $n; }, range(51, 100)), 'paging' => ['total' => 120]]));
+$http->respostas[] = new Response(200, (string) json_encode(['results' => array_map(function ($n) { return 'MLB' . $n; }, range(101, 120)), 'paging' => ['total' => 120]]));
+$ids = $ml->items()->idsBySeller(999);
+$offsets = array_map(function ($feita) { return query($feita[1])['offset'] ?? null; }, $http->feitas);
+confere('Anúncios: busca todas as páginas', count($ids) === 120 && $ids[119] === 'MLB120' && $offsets === ['0', '50', '100']);
+confere('Anúncios: vendedor, status e limite na busca', strpos($http->feitas[0][1], '/users/999/items/search?') !== false
+    && query($http->feitas[0][1])['status'] === 'active' && query($http->feitas[0][1])['limit'] === '50');
+
+// Anúncios: página vazia encerra mesmo com total maior
+$http->feitas = [];
+$http->respostas[] = new Response(200, '{"results":[],"paging":{"total":300}}');
+confere('Anúncios: página vazia encerra a busca', $ml->items()->idsBySeller(999, 'paused') === [] && count($http->feitas) === 1
+    && query($http->feitas[0][1])['status'] === 'paused');
+
+// Anúncios: detalhes em lotes de 20, ignorando os que não vieram
+$http->feitas = [];
+$lista = array_map(function ($n) { return 'MLB' . $n; }, range(1, 45));
+foreach ([array_slice($lista, 0, 20), array_slice($lista, 20, 20), array_slice($lista, 40)] as $lote) {
+    $http->respostas[] = new Response(200, (string) json_encode(array_map(function ($id) {
+        return $id === 'MLB7'
+            ? ['code' => 404, 'body' => ['message' => 'Item not found']]
+            : ['code' => 200, 'body' => ['id' => $id, 'title' => 'Anúncio ' . $id, 'seller_sku' => null]];
+    }, $lote)));
+}
+$anuncios = $ml->items()->getMany($lista);
+$lotes = array_map(function ($feita) { return count(explode(',', query($feita[1])['ids'])); }, $http->feitas);
+confere('Anúncios: getMany em lotes de 20', $lotes === [20, 20, 5]);
+confere('Anúncios: getMany ignora anúncio não encontrado', count($anuncios) === 44 && $anuncios[6]['id'] === 'MLB8');
+
+$http->feitas = [];
+confere('Anúncios: getMany sem ids não chama a API', $ml->items()->getMany([]) === [] && $http->feitas === []);
+
+// Envio: endereço de entrega com o formato novo
+$http->feitas = [];
+$http->respostas[] = new Response(200, '{"id":4000001,"status":"ready_to_ship","receiver_address":{"zip_code":"30140071","city":{"name":"Belo Horizonte"},"state":{"id":"BR-MG"}}}');
+$envio = $ml->shipments()->get(4000001);
+confere('Envio: busca pelo id com x-format-new', strpos($http->feitas[0][1], '/shipments/4000001') !== false
+    && in_array('x-format-new: true', $http->feitas[0][2], true));
+confere('Envio: devolve o endereço', $envio['receiver_address']['city']['name'] === 'Belo Horizonte');
+
+// Faturamento do comprador
+$http->feitas = [];
+$http->respostas[] = new Response(200, '{"billing_info":{"doc_type":"CPF","doc_number":"00996900632"}}');
+$faturamento = $ml->orders()->billingInfo(2000001234);
+confere('Faturamento: endpoint e documento', strpos($http->feitas[0][1], '/orders/2000001234/billing_info') !== false
+    && $faturamento['billing_info']['doc_number'] === '00996900632');
+
+// Rede de segurança: pedidos pagos recentes
+$http->feitas = [];
+$http->respostas[] = new Response(200, (string) json_encode(['results' => [
+    ['id' => 2000000002, 'status' => 'paid', 'order_items' => []],
+    ['id' => 2000000001, 'status' => 'paid', 'order_items' => []],
+], 'paging' => ['total' => 2]]));
+$recentes = $ml->orders()->recentPaid(999, 10);
+$filtros = query($http->feitas[0][1]);
+confere('Pagos recentes: filtros da busca', strpos($http->feitas[0][1], '/orders/search?') !== false && $filtros['seller'] === '999'
+    && strpos($http->feitas[0][1], 'order.status=paid') !== false && $filtros['sort'] === 'date_desc' && $filtros['limit'] === '10');
+confere('Pagos recentes: vira lista de Order', count($recentes) === 2 && $recentes[0]->id() === 2000000002 && $recentes[1]->isPaid());
+
+$http->respostas[] = new Response(200, '{"results":[],"paging":{"total":0}}');
+confere('Pagos recentes: nenhum pedido', $ml->orders()->recentPaid(999) === []);
+
 // Webhook
 $aviso = Notification::fromJson('{"resource":"/orders/2000001234","user_id":999,"topic":"orders_v2","application_id":123,"attempts":1}');
 confere('Webhook: pedido da conta certa', $aviso->isOrder() && $aviso->belongsTo(999, '123') && $aviso->resourceId() === '2000001234');

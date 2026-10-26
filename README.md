@@ -1,6 +1,6 @@
 # api-mercado-livre
 
-Biblioteca PHP para integrar sistemas de gestão (ERP) com o **Mercado Livre**.
+Biblioteca PHP para integrar ERP com o **Mercado Livre**.
 
 Ela cuida da parte do Mercado Livre: autorização da conta, renovação automática do token, leitura dos avisos de venda (webhook) e busca de pedidos, envios e anúncios. Ela **não conhece o banco do seu sistema**: quem decide como gravar o pedido é o ERP.
 

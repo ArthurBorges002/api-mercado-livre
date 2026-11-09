@@ -38,17 +38,36 @@ final class Orders
     /**
      * Pedidos pagos mais recentes. Use como rede de segurança para avisos perdidos.
      *
+     * Passe $desde (por exemplo, a data em que a conta foi conectada) para não
+     * trazer vendas antigas, feitas antes da integração existir.
+     *
      * @return Order[]
      */
-    public function recentPaid(int $sellerId, int $limite = 50): array
+    public function recentPaid(int $sellerId, int $limite = 50, ?\DateTimeInterface $desde = null): array
     {
-        $resposta = $this->search($sellerId, [
+        $filtros = [
             'order.status' => 'paid',
             'sort' => 'date_desc',
             'limit' => $limite,
-        ]);
+        ];
+        if ($desde !== null) {
+            $filtros['order.date_created.from'] = $desde->format('Y-m-d\TH:i:s.vP');
+        }
 
-        return array_map([Order::class, 'fromArray'], $resposta['results'] ?? []);
+        $resposta = $this->search($sellerId, $filtros);
+        $pedidos = array_map([Order::class, 'fromArray'], $resposta['results'] ?? []);
+
+        if ($desde === null) {
+            return $pedidos;
+        }
+
+        // O ML arredonda order.date_created.from para a hora cheia (testado em 09/11/2026):
+        // descarta aqui o que foi criado antes de $desde.
+        return array_values(array_filter($pedidos, static function (Order $pedido) use ($desde): bool {
+            $criado = $pedido->raw()['date_created'] ?? null;
+
+            return !is_string($criado) || strtotime($criado) >= $desde->getTimestamp();
+        }));
     }
 
     /**

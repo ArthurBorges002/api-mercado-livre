@@ -242,8 +242,23 @@ confere('Pagos recentes: filtros da busca', strpos($http->feitas[0][1], '/orders
     && strpos($http->feitas[0][1], 'order.status=paid') !== false && $filtros['sort'] === 'date_desc' && $filtros['limit'] === '10');
 confere('Pagos recentes: vira lista de Order', count($recentes) === 2 && $recentes[0]->id() === 2000000002 && $recentes[1]->isPaid());
 
+confere('Pagos recentes: sem data, não filtra por data', strpos($http->feitas[0][1], 'date_created') === false);
+
 $http->respostas[] = new Response(200, '{"results":[],"paging":{"total":0}}');
 confere('Pagos recentes: nenhum pedido', $ml->orders()->recentPaid(999) === []);
+
+$http->feitas = [];
+$http->respostas[] = new Response(200, '{"results":[],"paging":{"total":0}}');
+$ml->orders()->recentPaid(999, 50, new \DateTimeImmutable('2026-11-09 09:13:43', new \DateTimeZone('America/Sao_Paulo')));
+confere('Pagos recentes: só a partir da data', strpos(urldecode($http->feitas[0][1]), 'order.date_created.from=2026-11-09T09:13:43.000-03:00') !== false);
+
+// O ML arredonda o filtro para a hora cheia: o que vier antes da data é descartado
+$http->respostas[] = new Response(200, json_encode(['results' => [
+    ['id' => 2000000004, 'status' => 'paid', 'date_created' => '2026-11-09T08:27:10.000-04:00', 'order_items' => []],
+    ['id' => 2000000003, 'status' => 'paid', 'date_created' => '2026-11-09T08:05:00.000-04:00', 'order_items' => []],
+]]));
+$recentes = $ml->orders()->recentPaid(999, 50, new \DateTimeImmutable('2026-11-09 09:13:43', new \DateTimeZone('America/Sao_Paulo')));
+confere('Pagos recentes: descarta o criado antes da data', count($recentes) === 1 && $recentes[0]->id() === 2000000004);
 
 // Usuário de teste
 $http->feitas = [];

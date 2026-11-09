@@ -111,7 +111,7 @@ Outros recursos:
 
 | Chamada | Retorna |
 | --- | --- |
-| `$ml->orders()->recentPaid($sellerId)` | Pedidos pagos recentes (para recuperar avisos perdidos) |
+| `$ml->orders()->recentPaid($sellerId, 50, $desde)` | Pedidos pagos recentes (para recuperar avisos perdidos); `$desde` opcional evita vendas anteriores à integração |
 | `$ml->orders()->billingInfo($pedido->billingInfoId())` | Dados de faturamento do comprador (CPF/CNPJ, endereço fiscal) |
 | `$ml->shipments()->get($pedido->shippingId())` | Envio e endereço de entrega |
 | `$ml->items()->idsBySeller($sellerId)` | Ids dos anúncios ativos |

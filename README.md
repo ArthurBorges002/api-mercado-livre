@@ -113,12 +113,30 @@ Outros recursos:
 | --- | --- |
 | `$ml->orders()->recentPaid($sellerId, 50, $desde)` | Pedidos pagos recentes (para recuperar avisos perdidos); `$desde` opcional evita vendas anteriores à integração |
 | `$ml->orders()->billingInfo($pedido->billingInfoId())` | Dados de faturamento do comprador (CPF/CNPJ, endereço fiscal) |
-| `$ml->shipments()->get($pedido->shippingId())` | Envio e endereço de entrega |
+| `$ml->shipments()->find($pedido->shippingId())` | Envio já arrumado (`Shipment`): `address()`, `receiverName()`, `receiverPhone()`, `logisticType()`, `logisticDescription()`, `trackingNumber()` |
+| `$ml->shipments()->get($pedido->shippingId())` | Envio cru, como veio da API |
 | `$ml->items()->idsBySeller($sellerId)` | Ids dos anúncios ativos |
 | `$ml->items()->getMany($ids)` | Detalhes dos anúncios (título, SKU, variações) |
 | `$ml->users()->me()` | Conta conectada |
 | `$ml->users()->createTestUser('MLB')` | Cria usuário de teste (vendedor ou comprador) |
 | `$ml->get('/qualquer/recurso')` | Qualquer outro endpoint da API |
+
+### Envio e endereço de entrega
+
+A API de envios tem dois formatos. No novo, que a biblioteca pede (cabeçalho `x-format-new: true`), o endereço vem em `destination.shipping_address`, o destinatário em `destination.receiver_name` e a modalidade em `logistic.type`. No antigo, vinham em `receiver_address` e `logistic_type`. O `Shipment` lê os dois:
+
+```php
+$envio = $ml->shipments()->find($pedido->shippingId());
+
+$envio->address();             // street_name, street_number, comment, neighborhood, city,
+                               // state (sigla, ex.: MG), state_name, zip_code (só números), address_line
+$envio->receiverName();        // destinatário
+$envio->receiverPhone();       // vazio quando o ML mascara o telefone ("XXXXXXX")
+$envio->logisticType();        // fulfillment, cross_docking, drop_off, xd_drop_off, self_service...
+$envio->logisticDescription(); // Full, Mercado Envios (coleta), Mercado Envios (agência)...
+```
+
+O endereço de entrega pode ser diferente do endereço fiscal do comprador, que vem em `Orders::billingInfo()`.
 
 ### Token
 

@@ -15,6 +15,7 @@ use ApiMercadoLivre\Exception\AuthException;
 use ApiMercadoLivre\Http\HttpClient;
 use ApiMercadoLivre\Http\Response;
 use ApiMercadoLivre\MercadoLivre;
+use ApiMercadoLivre\Model\Shipment;
 use ApiMercadoLivre\Token;
 use ApiMercadoLivre\TokenStorage;
 use ApiMercadoLivre\Webhook\Notification;
@@ -200,13 +201,41 @@ confere('Anúncios: getMany ignora anúncio não encontrado', count($anuncios) =
 $http->feitas = [];
 confere('Anúncios: getMany sem ids não chama a API', $ml->items()->getMany([]) === [] && $http->feitas === []);
 
-// Envio: endereço de entrega com o formato novo
+// Envio: resposta crua
 $http->feitas = [];
 $http->respostas[] = new Response(200, '{"id":4000001,"status":"ready_to_ship","receiver_address":{"zip_code":"30140071","city":{"name":"Belo Horizonte"},"state":{"id":"BR-MG"}}}');
 $envio = $ml->shipments()->get(4000001);
 confere('Envio: busca pelo id com x-format-new', strpos($http->feitas[0][1], '/shipments/4000001') !== false
     && in_array('x-format-new: true', $http->feitas[0][2], true));
 confere('Envio: devolve o endereço', $envio['receiver_address']['city']['name'] === 'Belo Horizonte');
+
+// Envio arrumado, formato novo (como a API respondeu em 09/11/2026)
+$http->respostas[] = new Response(200, (string) json_encode(['id' => 48469654277, 'status' => 'pending',
+    'logistic' => ['mode' => 'me2', 'type' => 'xd_drop_off'],
+    'destination' => ['receiver_name' => 'Marcos Fernandes', 'receiver_phone' => 'XXXXXXX', 'shipping_address' => [
+        'street_name' => 'Rua Jardim America', 'street_number' => '36', 'comment' => null, 'zip_code' => '37480000',
+        'address_line' => 'Rua Jardim America 36', 'neighborhood' => ['id' => null, 'name' => 'Centro'],
+        'city' => ['id' => 'TUxCQ0xBTTcxOTVi', 'name' => 'Lambari'], 'state' => ['id' => 'BR-MG', 'name' => 'Minas Gerais'],
+    ]],
+]));
+$envio = $ml->shipments()->find(48469654277);
+confere('Envio novo: endereço arrumado', $envio->address() === ['street_name' => 'Rua Jardim America', 'street_number' => '36',
+    'comment' => '', 'neighborhood' => 'Centro', 'city' => 'Lambari', 'state' => 'MG', 'state_name' => 'Minas Gerais',
+    'zip_code' => '37480000', 'address_line' => 'Rua Jardim America 36']);
+confere('Envio novo: destinatário e telefone mascarado vira vazio', $envio->receiverName() === 'Marcos Fernandes' && $envio->receiverPhone() === '');
+confere('Envio novo: modalidade', $envio->logisticType() === 'xd_drop_off' && $envio->logisticDescription() === 'Mercado Envios (agência)');
+
+// Envio arrumado, formato antigo
+$envio = Shipment::fromArray(['id' => 4000002, 'logistic_type' => 'fulfillment', 'tracking_number' => 'BR123',
+    'receiver_address' => ['street_name' => 'Av. Afonso Pena', 'street_number' => 1000, 'zip_code' => '30130-005',
+        'receiver_name' => 'Ana', 'receiver_phone' => '(31) 99999-0000', 'neighborhood' => ['name' => 'Centro'],
+        'city' => ['name' => 'Belo Horizonte'], 'state' => ['id' => 'BR-MG', 'name' => 'Minas Gerais']]]);
+$endereco = $envio->address();
+confere('Envio antigo: endereço, CEP só números e número como texto', $endereco['street_number'] === '1000' && $endereco['zip_code'] === '30130005'
+    && $endereco['city'] === 'Belo Horizonte' && $endereco['state'] === 'MG');
+confere('Envio antigo: destinatário, telefone, modalidade e rastreio', $envio->receiverName() === 'Ana' && $envio->receiverPhone() === '(31) 99999-0000'
+    && $envio->logisticDescription() === 'Full' && $envio->trackingNumber() === 'BR123');
+confere('Envio sem endereço: chaves vazias', Shipment::fromArray(['id' => 1])->address()['city'] === '' && Shipment::fromArray(['id' => 1])->logisticDescription() === '');
 
 // Faturamento do comprador: endpoint novo, com o id que vem no pedido
 $http->feitas = [];

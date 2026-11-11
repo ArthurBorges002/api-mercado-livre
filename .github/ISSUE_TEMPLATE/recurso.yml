@@ -1,7 +1,7 @@
 name: Sugerir um recurso
 description: Uma ideia nova ou um endpoint do Mercado Livre que a biblioteca ainda não cobre.
 title: "[Recurso] "
-labels: ["melhoria"]
+labels: ["enhancement"]
 body:
   - type: textarea
     id: problema

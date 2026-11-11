@@ -1,0 +1,62 @@
+name: Relatar um bug
+description: Algo na biblioteca não funciona como deveria.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar. **Não cole credenciais:** troque `client_secret`, `access_token`, `refresh_token` e dados de compradores (nome, CPF/CNPJ, endereço, telefone) por valores fictícios.
+
+        Falha de segurança? Não abra issue: use o [relato privado](https://github.com/ArthurBorges002/api-mercado-livre/security/advisories/new).
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que aconteceu
+      description: Descreva o problema e o que você esperava que acontecesse.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduzir
+    attributes:
+      label: Como reproduzir
+      description: Trecho de código mínimo que mostra o problema.
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: erro
+    attributes:
+      label: Erro ou resposta recebida
+      description: Mensagem da exceção (`ApiException`, `AuthException`), status HTTP ou corpo da resposta da API.
+      render: text
+  - type: input
+    id: endpoint
+    attributes:
+      label: Endpoint do Mercado Livre
+      description: Se souber, qual endpoint estava envolvido.
+      placeholder: /orders/search
+  - type: input
+    id: php
+    attributes:
+      label: Versão do PHP
+      placeholder: "7.4.33"
+    validations:
+      required: true
+  - type: input
+    id: versao
+    attributes:
+      label: Versão da biblioteca
+      description: Commit ou tag que você está usando.
+      placeholder: 5f8872b
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmacoes
+    attributes:
+      label: Confirmações
+      options:
+        - label: Procurei nas issues e não achei este problema relatado.
+          required: true
+        - label: Removi credenciais e dados pessoais do que colei aqui.
+          required: true
